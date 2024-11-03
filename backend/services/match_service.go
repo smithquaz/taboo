@@ -38,7 +38,7 @@ func (s *MatchService) GetMatch(gameID, matchID string) (*models.MatchDetails, e
 
 func (s *MatchService) StartMatch(gameID, matchID string, teamAssignments map[string][]string) (*models.MatchDetails, error) {
 	// First verify the game exists
-	game, err := s.gameService.GetGame(gameID)
+	_, err := s.gameService.GetGame(gameID)
 	if err != nil {
 		return nil, errors.New("game not found")
 	}
@@ -60,35 +60,15 @@ func (s *MatchService) StartMatch(gameID, matchID string, teamAssignments map[st
 		return nil, errors.New("both teams must be assigned")
 	}
 
-	// Verify all players exist in the game
-	for _, playerID := range teamAPlayers {
-		found := false
-		for _, team := range game.Teams {
-			for _, player := range team.Players {
-				if player.ID == playerID {
-					found = true
-					break
-				}
-			}
-		}
-		if !found {
-			return nil, errors.New("player not found in game: " + playerID)
-		}
+	// Validate minimum team sizes
+	minPlayersPerTeam := 2 // Minimum players needed for a valid team
+	if len(teamAPlayers) < minPlayersPerTeam || len(teamBPlayers) < minPlayersPerTeam {
+		return nil, errors.New("each team must have at least 2 players")
 	}
 
-	for _, playerID := range teamBPlayers {
-		found := false
-		for _, team := range game.Teams {
-			for _, player := range team.Players {
-				if player.ID == playerID {
-					found = true
-					break
-				}
-			}
-		}
-		if !found {
-			return nil, errors.New("player not found in game: " + playerID)
-		}
+	// Validate team balance (difference should not be more than 1 player)
+	if abs(len(teamAPlayers) - len(teamBPlayers)) > 1 {
+		return nil, errors.New("teams must be balanced (difference of max 1 player)")
 	}
 
 	// Update match with team assignments
@@ -222,4 +202,65 @@ func (s *MatchService) CreateStage(gameID, matchID string, details models.MatchS
 
 func generateID() string {
 	return "stage-" + uuid.New().String()
+}
+
+func (s *MatchService) SwitchTeam(matchID string, playerID string) (*models.MatchDetails, error) {
+	match, exists := s.matches[matchID]
+	if !exists {
+		return nil, errors.New("match not found")
+	}
+
+	if match.Status != models.MatchStatusPending {
+		return nil, errors.New("team switches are only allowed before match starts")
+	}
+
+	// Find and remove player from current team
+	var currentTeam, otherTeam *[]string
+	if containsPlayer(match.TeamAPlayers, playerID) {
+		currentTeam = &match.TeamAPlayers
+		otherTeam = &match.TeamBPlayers
+	} else if containsPlayer(match.TeamBPlayers, playerID) {
+		currentTeam = &match.TeamBPlayers
+		otherTeam = &match.TeamAPlayers
+	} else {
+		return nil, errors.New("player not found in any team")
+	}
+
+	// Check if switch would create imbalance
+	if len(*currentTeam) - 1 < len(*otherTeam) - 1 {
+		return nil, errors.New("switch would create team imbalance")
+	}
+
+	// Perform the switch
+	*currentTeam = removePlayer(*currentTeam, playerID)
+	*otherTeam = append(*otherTeam, playerID)
+
+	return match, nil
+}
+
+// Helper functions
+func abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+
+func containsPlayer(players []string, playerID string) bool {
+	for _, p := range players {
+		if p == playerID {
+			return true
+		}
+	}
+	return false
+}
+
+func removePlayer(players []string, playerID string) []string {
+	result := make([]string, 0)
+	for _, p := range players {
+		if p != playerID {
+			result = append(result, p)
+		}
+	}
+	return result
 }

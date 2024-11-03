@@ -14,20 +14,20 @@ const (
 )
 
 type GameEvent struct {
-	Type      GameEventType     `json:"type"`
-	GameID    string           `json:"gameId"`
-	MatchID   string           `json:"matchId"`
-	Data      json.RawMessage  `json:"data"`
-	Timestamp time.Time        `json:"timestamp"`
+	Type      GameEventType   `json:"type"`
+	GameID    string          `json:"gameId"`
+	MatchID   string          `json:"matchId"`
+	Data      json.RawMessage `json:"data"`
+	Timestamp time.Time       `json:"timestamp"`
 }
 
 type ScoreUpdateData struct {
-	TeamAScore int `json:"teamAScore"`
-	TeamBScore int `json:"teamBScore"`
+	TeamAScore  int    `json:"teamAScore"`
+	TeamBScore  int    `json:"teamBScore"`
 	ScoringTeam string `json:"scoringTeam"`
 }
 
 type TurnChangeData struct {
 	ActiveTeam string `json:"activeTeam"`
 	TimeLeft   int    `json:"timeLeft"`
-} 
+}

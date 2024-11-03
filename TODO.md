@@ -36,6 +36,11 @@
   - [x] Team management
   - [x] Match flow
   - [x] Scoring system
+- [ ] Implement flexible team management
+  - [ ] Dynamic team size support
+  - [ ] Team switching functionality
+  - [ ] Team balancing logic
+  - [ ] Player queue system for large games
 
 ## 4. Backend Game Logic
 - [x] Implement game state management
@@ -46,6 +51,11 @@
 - [ ] Create WebSocket connection for real-time updates
 - [ ] Implement turn management
 - [ ] Add timer functionality
+- [ ] Add flexible team management
+  - [ ] Team switching during pre-match
+  - [ ] Dynamic role assignment based on team size
+  - [ ] Team rebalancing between matches
+  - [ ] Spectator mode for extra players
 
 ## 5. Frontend Development
 - [ ] Create basic UI components

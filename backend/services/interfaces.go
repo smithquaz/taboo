@@ -17,4 +17,5 @@ type MatchServiceInterface interface {
 	EndMatch(gameID, matchID string) (*models.MatchDetails, error)
 	ScorePoint(matchID string, isTeamA bool) (*models.MatchDetails, error)
 	CreateStage(gameID, matchID string, stageDetails models.MatchStageDetails) (*models.MatchStage, error)
+	SwitchTeam(matchID string, playerID string) (*models.MatchDetails, error)
 }
