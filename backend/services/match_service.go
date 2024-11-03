@@ -2,131 +2,155 @@ package services
 
 import (
 	"errors"
-	"fmt"
 	"taboo-game/models"
-	"time"
+
+	"github.com/google/uuid"
 )
 
 type MatchService struct {
-	gameService *GameService
+	matches     map[string]*models.MatchDetails
+	words       []string
+	gameService GameServiceInterface
 }
 
-func NewMatchService(gameService *GameService) *MatchService {
+func NewMatchService(gameService GameServiceInterface) *MatchService {
 	return &MatchService{
+		matches:     make(map[string]*models.MatchDetails),
+		words:       []string{},
 		gameService: gameService,
 	}
 }
 
-func (s *MatchService) GetMatch(gameID, matchID string) (*models.Match, error) {
-	game, err := s.gameService.GetGame(gameID)
-	if err != nil {
-		return nil, err
+func (s *MatchService) GetMatch(gameID, matchID string) (*models.MatchDetails, error) {
+	match, exists := s.matches[matchID]
+	if !exists {
+		return nil, errors.New("match not found")
 	}
-
-	for _, match := range game.Matches {
-		if match.ID == matchID {
-			return &match, nil
-		}
-	}
-	return nil, errors.New("match not found")
+	return match, nil
 }
 
-func (s *MatchService) StartMatch(gameID, matchID string, teamAssignments map[string][]string) (*models.Match, error) {
+func (s *MatchService) StartMatch(gameID, matchID string, teamAssignments map[string][]string) (*models.MatchDetails, error) {
+	// First verify the game exists
 	game, err := s.gameService.GetGame(gameID)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("game not found")
 	}
 
-	var match *models.Match
-	for i := range game.Matches {
-		if game.Matches[i].ID == matchID {
-			match = &game.Matches[i]
-			break
+	match, exists := s.matches[matchID]
+	if !exists {
+		match = &models.MatchDetails{
+			ID:     matchID,
+			GameID: gameID,
+			Status: models.MatchStatusPending,
 		}
-	}
-	if match == nil {
-		return nil, errors.New("match not found")
+		s.matches[matchID] = match
 	}
 
 	// Validate team assignments
-	if err := s.validateTeamAssignments(game, teamAssignments); err != nil {
-		return nil, err
+	teamAPlayers, hasTeamA := teamAssignments["teamA"]
+	teamBPlayers, hasTeamB := teamAssignments["teamB"]
+	if !hasTeamA || !hasTeamB {
+		return nil, errors.New("both teams must be assigned")
 	}
 
-	// Update team assignments
-	for teamID, playerIDs := range teamAssignments {
-		for i := range game.Teams {
-			if game.Teams[i].ID == teamID {
-				game.Teams[i].Players = make([]models.Player, 0)
-				for _, playerID := range playerIDs {
-					// Add player to team
-					// Note: In a real implementation, you'd want to validate these players exist
-					game.Teams[i].Players = append(game.Teams[i].Players, models.Player{ID: playerID})
+	// Verify all players exist in the game
+	for _, playerID := range teamAPlayers {
+		found := false
+		for _, team := range game.Teams {
+			for _, player := range team.Players {
+				if player.ID == playerID {
+					found = true
+					break
 				}
 			}
 		}
+		if !found {
+			return nil, errors.New("player not found in game: " + playerID)
+		}
 	}
 
-	match.Status = models.MatchStatusActive
-	match.StartedAt = time.Now()
-
-	// Save the updated game state
-	if err := s.gameService.UpdateGame(game); err != nil {
-		return nil, err
+	for _, playerID := range teamBPlayers {
+		found := false
+		for _, team := range game.Teams {
+			for _, player := range team.Players {
+				if player.ID == playerID {
+					found = true
+					break
+				}
+			}
+		}
+		if !found {
+			return nil, errors.New("player not found in game: " + playerID)
+		}
 	}
+
+	// Update match with team assignments
+	match.TeamAPlayers = teamAPlayers
+	match.TeamBPlayers = teamBPlayers
+	match.Status = models.MatchStatusPending
+	match.CurrentWord = s.getNextWord()
+	match.TeamATurn = true
 
 	return match, nil
 }
 
-func (s *MatchService) EndMatch(gameID, matchID string) (*models.Match, error) {
-	game, err := s.gameService.GetGame(gameID)
-	if err != nil {
-		return nil, err
-	}
-
-	var match *models.Match
-	for i := range game.Matches {
-		if game.Matches[i].ID == matchID {
-			match = &game.Matches[i]
-			break
-		}
-	}
-	if match == nil {
+func (s *MatchService) ScorePoint(matchID string, isTeamA bool) (*models.MatchDetails, error) {
+	match, exists := s.matches[matchID]
+	if !exists {
 		return nil, errors.New("match not found")
 	}
 
-	if match.Status != models.MatchStatusActive {
-		return nil, errors.New("match is not active")
+	if match.Status != models.MatchStatusPending {
+		return nil, errors.New("match is not in progress")
 	}
 
-	match.Status = models.MatchStatusCompleted
-	match.EndedAt = time.Now()
-
-	// Save the updated game state
-	if err := s.gameService.UpdateGame(game); err != nil {
-		return nil, err
+	if isTeamA {
+		match.TeamAScore++
+	} else {
+		match.TeamBScore++
 	}
 
 	return match, nil
 }
 
-func (s *MatchService) validateTeamAssignments(game *models.Game, assignments map[string][]string) error {
-	// Validate that all teams are assigned the correct number of players
-	for teamID, playerIDs := range assignments {
-		var team *models.Team
-		for i := range game.Teams {
-			if game.Teams[i].ID == teamID {
-				team = &game.Teams[i]
-				break
-			}
-		}
-		if team == nil {
-			return fmt.Errorf("team %s not found", teamID)
-		}
-
-		if len(playerIDs) != team.Size {
-			return fmt.Errorf("team %s requires %d players, got %d", teamID, team.Size, len(playerIDs))
-		}
+func (s *MatchService) EndMatch(gameID, matchID string) (*models.MatchDetails, error) {
+	match, exists := s.matches[matchID]
+	if !exists {
+		return nil, errors.New("match not found")
 	}
-	return nil
+
+	match.Status = models.MatchStatusCompleted
+	return match, nil
+}
+
+func (s *MatchService) getNextWord() string {
+	return "placeholder"
+}
+
+func (s *MatchService) CreateStage(gameID, matchID string, details models.MatchStageDetails) (*models.MatchStage, error) {
+	match, exists := s.matches[matchID]
+	if !exists {
+		return nil, errors.New("match not found")
+	}
+
+	if match.Status != models.MatchStatusPending {
+		return nil, errors.New("match is not in pending state")
+	}
+
+	stage := &models.MatchStage{
+		ID:             generateID(),
+		MatchID:        matchID,
+		ActiveTeamID:   details.ActiveTeamID,
+		SpottingTeamID: details.SpottingTeamID,
+		ClueGivers:     details.ClueGivers,
+		Guessers:       details.Guessers,
+		Spotters:       details.Spotters,
+		Status:         "pending",
+	}
+
+	return stage, nil
+}
+
+func generateID() string {
+	return "stage-" + uuid.New().String()
 }

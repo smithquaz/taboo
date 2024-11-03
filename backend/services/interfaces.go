@@ -12,7 +12,9 @@ type GameServiceInterface interface {
 }
 
 type MatchServiceInterface interface {
-	GetMatch(gameID, matchID string) (*models.Match, error)
-	StartMatch(gameID, matchID string, teamAssignments map[string][]string) (*models.Match, error)
-	EndMatch(gameID, matchID string) (*models.Match, error)
+	GetMatch(gameID, matchID string) (*models.MatchDetails, error)
+	StartMatch(gameID, matchID string, teamAssignments map[string][]string) (*models.MatchDetails, error)
+	EndMatch(gameID, matchID string) (*models.MatchDetails, error)
+	ScorePoint(matchID string, isTeamA bool) (*models.MatchDetails, error)
+	CreateStage(gameID, matchID string, stageDetails models.MatchStageDetails) (*models.MatchStage, error)
 }
