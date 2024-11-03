@@ -67,7 +67,7 @@ func (s *MatchService) StartMatch(gameID, matchID string, teamAssignments map[st
 	}
 
 	// Validate team balance (difference should not be more than 1 player)
-	if abs(len(teamAPlayers) - len(teamBPlayers)) > 1 {
+	if abs(len(teamAPlayers)-len(teamBPlayers)) > 1 {
 		return nil, errors.New("teams must be balanced (difference of max 1 player)")
 	}
 
@@ -227,7 +227,7 @@ func (s *MatchService) SwitchTeam(matchID string, playerID string) (*models.Matc
 	}
 
 	// Check if switch would create imbalance
-	if len(*currentTeam) - 1 < len(*otherTeam) - 1 {
+	if len(*currentTeam)-1 < len(*otherTeam)-1 {
 		return nil, errors.New("switch would create team imbalance")
 	}
 
