@@ -4,14 +4,12 @@ import (
 	"taboo-game/models"
 	"taboo-game/services"
 	"taboo-game/tests/mocks"
-	"taboo-game/websocket"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func setupMatchService(t *testing.T) (*services.MatchService, *models.MatchDetails) {
-	wsManager := websocket.NewManager()
 	mockGameService := &mocks.MockGameService{
 		GetGameFunc: func(gameID string) (*models.Game, error) {
 			return &models.Game{
@@ -20,7 +18,13 @@ func setupMatchService(t *testing.T) (*services.MatchService, *models.MatchDetai
 			}, nil
 		},
 	}
-	ms := services.NewMatchService(mockGameService, wsManager)
+	
+	// Create a mock WebSocketManagerInterface
+	mockWSManager := &mocks.MockWebSocketManager{
+		SendToGameFunc: func(gameID string, message []byte) {},
+	}
+	
+	ms := services.NewMatchService(mockGameService, mockWSManager)
 
 	// Create and store a test match
 	match := createTestMatch(t)

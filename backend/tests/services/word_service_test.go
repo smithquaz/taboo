@@ -17,10 +17,12 @@ func TestWordService(t *testing.T) {
 	assert.NoError(t, err)
 	defer os.RemoveAll(testDir)
 
-	// Create test word files
+	// Create test word files with unique words
 	testWords := [][]string{
-		{"word", "taboo1", "taboo2", "taboo3", "1", "general"},
-		{"test", "no", "yes", "maybe", "2", "test"},
+		{"word1", "taboo1", "taboo2", "taboo3", "1", "general"},
+		{"word2", "no", "yes", "maybe", "2", "test"},
+		{"word3", "foo", "bar", "baz", "1", "general"},
+		{"word4", "alpha", "beta", "gamma", "2", "test"},
 	}
 
 	files := []string{"common_words.csv", "domain_words.csv"}
@@ -43,25 +45,15 @@ func TestWordService(t *testing.T) {
 	usedCards := make(map[string]bool)
 	expectedCards := len(testWords) * len(files)
 
-	// Add debug logging
-	t.Logf("Expecting to get %d cards", expectedCards)
-
 	for i := 0; i < expectedCards; i++ {
 		card, err := ws.GetNextCard()
-		if err != nil {
-			t.Logf("Failed to get card #%d: %v", i+1, err)
-			t.FailNow()
-		}
-		if card == nil {
-			t.Logf("Got nil card on iteration #%d", i+1)
-			t.FailNow()
-		}
-
+		assert.NoError(t, err)
+		assert.NotNil(t, card)
+		
 		t.Logf("Got card #%d: %s", i+1, card.ID)
 		assert.False(t, usedCards[card.ID], "Card should not be repeated")
 		usedCards[card.ID] = true
 	}
 
-	// Verify we got all expected cards
 	assert.Equal(t, expectedCards, len(usedCards), "Should have received all unique cards")
 }

@@ -30,6 +30,7 @@ type MatchDetails struct {
 type MatchStage struct {
 	ID             string   `json:"id"`
 	MatchID        string   `json:"matchId"`
+	Number         int      `json:"number"`
 	ActiveTeamID   string   `json:"activeTeamId"`
 	SpottingTeamID string   `json:"spottingTeamId"`
 	ClueGivers     []string `json:"clueGivers"`

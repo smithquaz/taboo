@@ -3,16 +3,15 @@ package handlers
 import (
 	"net/http"
 	"taboo-game/models"
-	"taboo-game/services"
-
+	"taboo-game/types"
 	"github.com/gin-gonic/gin"
 )
 
 type MatchHandler struct {
-	matchService services.MatchServiceInterface
+	matchService types.MatchServiceInterface
 }
 
-func NewMatchHandler(matchService services.MatchServiceInterface) *MatchHandler {
+func NewMatchHandler(matchService types.MatchServiceInterface) *MatchHandler {
 	return &MatchHandler{
 		matchService: matchService,
 	}

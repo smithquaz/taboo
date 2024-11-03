@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"taboo-game/models"
-	"taboo-game/websocket"
 	"time"
+	"taboo-game/types"
 
 	"github.com/google/uuid"
 )
@@ -13,12 +13,12 @@ import (
 type MatchService struct {
 	matches      map[string]*models.MatchDetails
 	words        []string
-	gameService  GameServiceInterface
-	wsManager    *websocket.Manager
+	gameService  types.GameServiceInterface
+	wsManager    types.WebSocketManagerInterface
 	turnDuration time.Duration
 }
 
-func NewMatchService(gameService GameServiceInterface, wsManager *websocket.Manager) *MatchService {
+func NewMatchService(gameService types.GameServiceInterface, wsManager types.WebSocketManagerInterface) *MatchService {
 	return &MatchService{
 		matches:      make(map[string]*models.MatchDetails),
 		words:        []string{},
@@ -378,4 +378,22 @@ func (s *MatchService) FinalizeStageScores(stageID string) error {
 // Add this method to store matches for testing
 func (s *MatchService) StoreMatch(match *models.MatchDetails) {
 	s.matches[match.ID] = match
+}
+
+func (s *MatchService) NextStage(gameID string) error {
+	match, err := s.GetCurrentMatch(gameID)
+	if err != nil {
+		return err
+	}
+	match.CurrentStage.Status = "in_progress"
+	return nil
+}
+
+func (s *MatchService) EndCurrentMatch(gameID string) error {
+	match, err := s.GetCurrentMatch(gameID)
+	if err != nil {
+		return err
+	}
+	match.Status = models.MatchStatusCompleted
+	return nil
 }

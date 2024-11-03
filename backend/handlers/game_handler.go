@@ -2,16 +2,16 @@ package handlers
 
 import (
 	"net/http"
-	"taboo-game/services"
+	"taboo-game/types"
 
 	"github.com/gin-gonic/gin"
 )
 
 type GameHandler struct {
-	gameService services.GameServiceInterface
+	gameService types.GameServiceInterface
 }
 
-func NewGameHandler(gameService services.GameServiceInterface) *GameHandler {
+func NewGameHandler(gameService types.GameServiceInterface) *GameHandler {
 	return &GameHandler{
 		gameService: gameService,
 	}

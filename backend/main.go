@@ -4,7 +4,6 @@ import (
 	"log"
 	"taboo-game/docs"
 	"taboo-game/handlers"
-	"taboo-game/helpers"
 	"taboo-game/routes"
 	"taboo-game/services"
 	"taboo-game/websocket"
@@ -32,51 +31,40 @@ func main() {
 	docs.SwaggerInfo.BasePath = "/api/v1"
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	// Load words from CSV files
-	commonWords, err := helpers.LoadWordsFromCSV("data/common_words.csv", "common")
-	if err != nil {
-		log.Fatalf("Failed to load common words: %v", err)
-	}
-
-	specificWords, err := helpers.LoadWordsFromCSV("data/domain_words.csv", "specific")
-	if err != nil {
-		log.Fatalf("Failed to load specific words: %v", err)
-	}
-
-	// Initialize WebSocket manager first
-	wsManager := websocket.NewManager()
-	go wsManager.Start()
-
-	// Initialize services
+	// Initialize core services
 	gameService := services.NewGameService()
-	matchService := services.NewMatchService(gameService, wsManager)
+	wordService, err := services.NewWordService("data")
+	if err != nil {
+		log.Fatalf("Failed to initialize word service: %v", err)
+	}
 
-	// Initialize handlers
+	// Initialize handlers first
 	gameHandler := handlers.NewGameHandler(gameService)
+	gameEventsHandler := handlers.NewGameEventsHandler(gameService)
+
+	// Initialize websocket with the game events handler
+	wsManager := websocket.NewManager(gameEventsHandler)
+	go wsManager.Run()
+
+	// Initialize services that depend on websocket
+	matchService := services.NewMatchService(gameService, wsManager)
+	services.NewGameEventsService(matchService, wordService, wsManager)
+
+	// Initialize handlers that depend on services
 	matchHandler := handlers.NewMatchHandler(matchService)
 
-	// Initialize WebSocket handler
-	wsHandler := handlers.NewWebSocketHandler(wsManager)
-
-	// Initialize and register routes
-	wordRoutes := routes.NewWordRoutes(commonWords, specificWords)
-	gameRoutes := routes.NewGameRoutes(gameHandler)
-	matchRoutes := routes.NewMatchRoutes(matchHandler)
-
-	// Register all routes
-	wordRoutes.RegisterRoutes(r)
-	gameRoutes.RegisterRoutes(r)
-	matchRoutes.RegisterRoutes(r)
-
-	// Add WebSocket route
-	r.GET("/ws/:gameId", wsHandler.HandleConnection)
+	// Register routes
+	routes.SetupWebSocketRoutes(r, wsManager)
+	routes.NewGameRoutes(gameHandler).RegisterRoutes(r)
+	routes.NewMatchRoutes(matchHandler).RegisterRoutes(r)
 
 	// Health check
 	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
+		c.JSON(200, gin.H{"message": "pong"})
 	})
 
-	r.Run(":8080")
+	// Start server
+	if err := r.Run(":8080"); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
 }

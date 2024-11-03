@@ -1,134 +1,111 @@
 package websocket
 
 import (
-	"log"
-	"sync"
-
 	"github.com/gorilla/websocket"
+	"log"
+	"net/http"
+	"sync"
+	"taboo-game/types"
 )
 
-type Client struct {
-	ID      string
-	GameID  string
-	Socket  *websocket.Conn
-	Send    chan []byte
-	Manager *Manager
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return true // In production, implement proper origin checking
+	},
 }
 
 type Manager struct {
-	clients    map[*Client]bool
-	broadcast  chan []byte
-	register   chan *Client
-	unregister chan *Client
-	sync.RWMutex
-	// Maps gameID to a list of clients
-	gameClients map[string]map[*Client]bool
+	mu              sync.RWMutex
+	gameConnections map[string]map[*websocket.Conn]bool
+	gameEvents      types.GameEventsServiceInterface
+	register        chan types.WebSocketClientInterface
+	unregister      chan types.WebSocketClientInterface
+	shutdown        chan struct{}
 }
 
-func NewManager() *Manager {
+func NewManager(gameEvents types.GameEventsServiceInterface) *Manager {
 	return &Manager{
-		clients:     make(map[*Client]bool),
-		broadcast:   make(chan []byte),
-		register:    make(chan *Client),
-		unregister:  make(chan *Client),
-		gameClients: make(map[string]map[*Client]bool),
+		gameConnections: make(map[string]map[*websocket.Conn]bool),
+		gameEvents:      gameEvents,
+		register:        make(chan types.WebSocketClientInterface),
+		unregister:      make(chan types.WebSocketClientInterface),
+		shutdown:        make(chan struct{}),
 	}
 }
 
-// Register adds a new client to the manager
-func (m *Manager) Register(client *Client) {
+func (m *Manager) Register(client types.WebSocketClientInterface) {
 	m.register <- client
 }
 
-func (m *Manager) Start() {
-	for {
-		select {
-		case client := <-m.register:
-			m.Lock()
-			m.clients[client] = true
-			if _, ok := m.gameClients[client.GameID]; !ok {
-				m.gameClients[client.GameID] = make(map[*Client]bool)
-			}
-			m.gameClients[client.GameID][client] = true
-			m.Unlock()
-
-		case client := <-m.unregister:
-			m.Lock()
-			if _, ok := m.clients[client]; ok {
-				delete(m.clients, client)
-				delete(m.gameClients[client.GameID], client)
-				close(client.Send)
-			}
-			m.Unlock()
-
-		case message := <-m.broadcast:
-			m.Lock()
-			for client := range m.clients {
-				select {
-				case client.Send <- message:
-				default:
-					close(client.Send)
-					delete(m.clients, client)
-					delete(m.gameClients[client.GameID], client)
-				}
-			}
-			m.Unlock()
-		}
-	}
+func (m *Manager) Unregister(client types.WebSocketClientInterface) {
+	m.unregister <- client
 }
 
 func (m *Manager) SendToGame(gameID string, message []byte) {
-	m.Lock()
-	defer m.Unlock()
+	m.mu.RLock()
+	connections := m.gameConnections[gameID]
+	m.mu.RUnlock()
 
-	if clients, ok := m.gameClients[gameID]; ok {
-		for client := range clients {
-			select {
-			case client.Send <- message:
-			default:
-				close(client.Send)
-				delete(m.clients, client)
-				delete(m.gameClients[client.GameID], client)
-			}
+	for conn := range connections {
+		if err := conn.WriteMessage(websocket.TextMessage, message); err != nil {
+			log.Printf("Error sending message: %v", err)
 		}
 	}
 }
 
-func (c *Client) Read() {
-	defer func() {
-		c.Manager.unregister <- c
-		c.Socket.Close()
-	}()
-
-	for {
-		_, message, err := c.Socket.ReadMessage()
-		if err != nil {
-			log.Printf("Error reading from websocket: %v", err)
-			break
-		}
-		// Handle incoming messages
-		log.Printf("Received message from client %s: %s", c.ID, string(message))
-	}
-}
-
-func (c *Client) Write() {
-	defer func() {
-		c.Socket.Close()
-	}()
-
+func (m *Manager) Run() {
 	for {
 		select {
-		case message, ok := <-c.Send:
-			if !ok {
-				c.Socket.WriteMessage(websocket.CloseMessage, []byte{})
-				return
-			}
-
-			err := c.Socket.WriteMessage(websocket.TextMessage, message)
-			if err != nil {
-				log.Printf("Error writing to websocket: %v", err)
-				return
-			}
+		case <-m.shutdown:
+			return
+		case client := <-m.register:
+			m.handleRegister(client)
+		case client := <-m.unregister:
+			m.handleUnregister(client)
 		}
 	}
+}
+
+func (m *Manager) Stop() {
+	close(m.shutdown)
+}
+
+func (m *Manager) handleRegister(client types.WebSocketClientInterface) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if _, exists := m.gameConnections[client.GetGameID()]; !exists {
+		m.gameConnections[client.GetGameID()] = make(map[*websocket.Conn]bool)
+	}
+	if wsClient, ok := client.(*Client); ok {
+		m.gameConnections[client.GetGameID()][wsClient.Socket] = true
+	}
+}
+
+func (m *Manager) handleUnregister(client types.WebSocketClientInterface) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if wsClient, ok := client.(*Client); ok {
+		if conns, exists := m.gameConnections[client.GetGameID()]; exists {
+			delete(conns, wsClient.Socket)
+		}
+	}
+}
+
+func (m *Manager) HandleConnection(w http.ResponseWriter, r *http.Request, gameID string, playerID string) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Printf("Failed to upgrade connection: %v", err)
+		return
+	}
+
+	client := NewClient(playerID, gameID, conn)
+	m.Register(client)
+
+	// Handle connection in goroutines
+	go client.Read()
+	go client.Write()
 }
