@@ -8,6 +8,12 @@ const (
 	MatchStatusCompleted  MatchStatus = "completed"
 )
 
+const (
+	PointsCorrectGuess    = 1
+	PointsViolationCatch  = 1
+	BasePointsTeamOfThree = 2 // Base points for smaller team to balance game
+)
+
 type MatchDetails struct {
 	ID           string      `json:"id"`
 	GameID       string      `json:"gameId"`
@@ -18,6 +24,7 @@ type MatchDetails struct {
 	TeamAPlayers []string    `json:"teamAPlayers"`
 	TeamBPlayers []string    `json:"teamBPlayers"`
 	CurrentWord  string      `json:"currentWord"`
+	CurrentStage *MatchStage `json:"currentStage"`
 }
 
 type MatchStage struct {
@@ -29,6 +36,8 @@ type MatchStage struct {
 	Guessers       []string `json:"guessers"`
 	Spotters       []string `json:"spotters"`
 	Status         string   `json:"status"`
+	TeamAScore     int      `json:"teamAScore"`
+	TeamBScore     int      `json:"teamBScore"`
 }
 
 type MatchStageDetails struct {

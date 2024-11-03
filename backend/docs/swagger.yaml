@@ -1,0 +1,9 @@
+basePath: /api/v1
+host: localhost:8080
+info:
+  contact: {}
+  description: API Server for Taboo Game Application
+  title: Taboo Game API
+  version: "1.0"
+paths: {}
+swagger: "2.0"

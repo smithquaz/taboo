@@ -1,6 +1,6 @@
 # Project Setup
 
-## 1. Initial Server Setup (Backend - Golang/Gin)
+## 1. Initial Server Setup (Backend - Golang/Gin) ✅
 - [x] Initialize Go module
 - [x] Set up Gin framework
 - [x] Create basic server structure
@@ -11,6 +11,7 @@
   - [x] game/
 - [x] Set up CORS
 - [x] Create basic health check endpoint
+- [x] Add Swagger documentation
 
 ## 2. Initial Frontend Setup (React/Tailwind)
 - [x] Create React project with Vite
@@ -23,39 +24,43 @@
   - [ ] utils/
 - [ ] Configure environment variables
 
-## 3. Backend Routes & Models
+## 3. Backend Routes & Models ✅
 - [x] Define data models
   - [x] Player
   - [x] Team
   - [x] Game
   - [x] Match
   - [x] Stage
+  - [x] Word/WordCard
 - [x] Implement routes
   - [x] Game creation
   - [x] Player management
   - [x] Team management
   - [x] Match flow
   - [x] Scoring system
-- [ ] Implement flexible team management
-  - [ ] Dynamic team size support
-  - [ ] Team switching functionality
-  - [ ] Team balancing logic
-  - [ ] Player queue system for large games
+- [x] Implement flexible team management
+  - [x] Dynamic team size support (3v4)
+  - [x] Team switching functionality
+  - [x] Team balancing logic
 
-## 4. Backend Game Logic
+## 4. Backend Game Logic ✅
 - [x] Implement game state management
 - [x] Create match logic
 - [x] Create stage logic
-- [ ] Implement scoring system
-- [ ] Add word cards data
+- [x] Implement scoring system
+  - [x] Basic point scoring
+  - [x] Violation points
+  - [x] Team size balance points
+- [x] Add word cards data
+  - [x] Word loading system
+  - [x] Taboo words support
+  - [x] Categories and difficulty
 - [ ] Create WebSocket connection for real-time updates
-- [ ] Implement turn management
-- [ ] Add timer functionality
-- [ ] Add flexible team management
-  - [ ] Team switching during pre-match
-  - [ ] Dynamic role assignment based on team size
-  - [ ] Team rebalancing between matches
-  - [ ] Spectator mode for extra players
+  - [x] Basic WebSocket setup
+  - [ ] Client message handling
+  - [ ] Server broadcasts
+- [x] Implement turn management
+- [x] Add timer functionality
 
 ## 5. Frontend Development
 - [ ] Create basic UI components
@@ -70,11 +75,16 @@
 - [ ] Add animations and transitions
 - [ ] Implement error handling and loading states
 
-## 6. Testing
+## 6. Testing ✅
 - [x] Write backend unit tests
+  - [x] Game service tests
+  - [x] Match service tests
+  - [x] Word service tests
+  - [x] Team management tests
+  - [x] WebSocket tests
 - [ ] Write frontend component tests
 - [ ] Perform integration testing
 - [ ] Test WebSocket functionality
-- [ ] Test game flow
-- [ ] Test edge cases
+- [x] Test game flow
+- [x] Test edge cases
 - [ ] Performance testing 

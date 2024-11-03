@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"taboo-game/docs"
 	"taboo-game/handlers"
 	"taboo-game/helpers"
 	"taboo-game/routes"
@@ -10,8 +11,15 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
+// @title           Taboo Game API
+// @version         1.0
+// @description     API Server for Taboo Game Application
+// @host            localhost:8080
+// @BasePath        /api/v1
 func main() {
 	r := gin.Default()
 
@@ -19,6 +27,10 @@ func main() {
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{"http://localhost:5173"} // Vite default port
 	r.Use(cors.New(config))
+
+	// Swagger documentation
+	docs.SwaggerInfo.BasePath = "/api/v1"
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Load words from CSV files
 	commonWords, err := helpers.LoadWordsFromCSV("data/common_words.csv", "common")

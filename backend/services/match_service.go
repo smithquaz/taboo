@@ -214,26 +214,37 @@ func (s *MatchService) SwitchTeam(matchID string, playerID string) (*models.Matc
 		return nil, errors.New("team switches are only allowed before match starts")
 	}
 
-	// Find and remove player from current team
-	var currentTeam, otherTeam *[]string
-	if containsPlayer(match.TeamAPlayers, playerID) {
-		currentTeam = &match.TeamAPlayers
-		otherTeam = &match.TeamBPlayers
-	} else if containsPlayer(match.TeamBPlayers, playerID) {
-		currentTeam = &match.TeamBPlayers
-		otherTeam = &match.TeamAPlayers
-	} else {
+	// Find current team of the player
+	isInTeamA := containsPlayer(match.TeamAPlayers, playerID)
+	isInTeamB := containsPlayer(match.TeamBPlayers, playerID)
+
+	if !isInTeamA && !isInTeamB {
 		return nil, errors.New("player not found in any team")
 	}
 
-	// Check if switch would create imbalance
-	if len(*currentTeam)-1 < len(*otherTeam)-1 {
+	// Calculate new team sizes after switch
+	var newTeamASize, newTeamBSize int
+	if isInTeamA {
+		newTeamASize = len(match.TeamAPlayers) - 1
+		newTeamBSize = len(match.TeamBPlayers) + 1
+	} else {
+		newTeamASize = len(match.TeamAPlayers) + 1
+		newTeamBSize = len(match.TeamBPlayers) - 1
+	}
+
+	// Check if switch would create imbalance (difference > 1)
+	if abs(newTeamASize-newTeamBSize) > 1 {
 		return nil, errors.New("switch would create team imbalance")
 	}
 
 	// Perform the switch
-	*currentTeam = removePlayer(*currentTeam, playerID)
-	*otherTeam = append(*otherTeam, playerID)
+	if isInTeamA {
+		match.TeamAPlayers = removePlayer(match.TeamAPlayers, playerID)
+		match.TeamBPlayers = append(match.TeamBPlayers, playerID)
+	} else {
+		match.TeamBPlayers = removePlayer(match.TeamBPlayers, playerID)
+		match.TeamAPlayers = append(match.TeamAPlayers, playerID)
+	}
 
 	return match, nil
 }
@@ -263,4 +274,108 @@ func removePlayer(players []string, playerID string) []string {
 		}
 	}
 	return result
+}
+
+func (s *MatchService) GetCurrentMatch(stageID string) (*models.MatchDetails, error) {
+	// Find match containing this stage
+	for _, match := range s.matches {
+		if match.CurrentStage != nil && match.CurrentStage.ID == stageID {
+			return match, nil
+		}
+	}
+	return nil, errors.New("match not found for stage")
+}
+
+func (s *MatchService) getOpposingTeamID(teamID string) string {
+	// Using TeamA/TeamB style
+	if teamID == "teamA" {
+		return "teamB"
+	}
+	return "teamA"
+}
+
+func (s *MatchService) getSmallerTeam(match *models.MatchDetails) string {
+	// Using TeamA/TeamB style
+	if len(match.TeamAPlayers) < len(match.TeamBPlayers) {
+		return "teamA"
+	}
+	return "teamB"
+}
+
+func (s *MatchService) ProcessGuessAttempt(attempt *models.GuessAttempt) error {
+	match, err := s.GetCurrentMatch(attempt.StageID)
+	if err != nil {
+		return err
+	}
+
+	if match.CurrentStage == nil {
+		return errors.New("no active stage")
+	}
+
+	// Update both match and stage scores
+	if attempt.Correct {
+		if attempt.TeamID == "teamA" {
+			match.TeamAScore += models.PointsCorrectGuess
+			match.CurrentStage.TeamAScore += models.PointsCorrectGuess
+		} else {
+			match.TeamBScore += models.PointsCorrectGuess
+			match.CurrentStage.TeamBScore += models.PointsCorrectGuess
+		}
+	}
+
+	if attempt.Violation {
+		opposingTeamID := s.getOpposingTeamID(attempt.TeamID)
+		if opposingTeamID == "teamA" {
+			match.TeamAScore += models.PointsViolationCatch
+			match.CurrentStage.TeamAScore += models.PointsViolationCatch
+		} else {
+			match.TeamBScore += models.PointsViolationCatch
+			match.CurrentStage.TeamBScore += models.PointsViolationCatch
+		}
+	}
+
+	// Emit score update event
+	dataJSON, _ := json.Marshal(struct {
+		TeamAScore int `json:"teamAScore"`
+		TeamBScore int `json:"teamBScore"`
+	}{
+		TeamAScore: match.TeamAScore,
+		TeamBScore: match.TeamBScore,
+	})
+
+	scoreUpdate := models.GameEvent{
+		Type:    "SCORE_UPDATE",
+		GameID:  match.GameID,
+		MatchID: match.ID,
+		Data:    json.RawMessage(dataJSON),
+	}
+
+	eventJSON, _ := json.Marshal(scoreUpdate)
+	s.wsManager.SendToGame(match.GameID, eventJSON)
+
+	return nil
+}
+
+func (s *MatchService) FinalizeStageScores(stageID string) error {
+	match, err := s.GetCurrentMatch(stageID)
+	if err != nil {
+		return err
+	}
+
+	// Apply team size balance adjustment at the end of each stage
+	smallerTeam := s.getSmallerTeam(match)
+	if smallerTeam == "teamA" && len(match.TeamAPlayers) == 3 {
+		match.TeamAScore += models.BasePointsTeamOfThree
+		match.CurrentStage.TeamAScore += models.BasePointsTeamOfThree
+	} else if smallerTeam == "teamB" && len(match.TeamBPlayers) == 3 {
+		match.TeamBScore += models.BasePointsTeamOfThree
+		match.CurrentStage.TeamBScore += models.BasePointsTeamOfThree
+	}
+
+	return nil
+}
+
+// Add this method to store matches for testing
+func (s *MatchService) StoreMatch(match *models.MatchDetails) {
+	s.matches[match.ID] = match
 }
