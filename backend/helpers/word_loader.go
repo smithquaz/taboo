@@ -10,7 +10,7 @@ import (
 	"taboo-game/models"
 )
 
-func LoadWordsFromCSV(filename string, category string) ([]models.Word, error) {
+func LoadWordsFromCSV(filename string, category models.WordCategory) ([]models.Word, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, fmt.Errorf("error opening file: %v", err)
@@ -51,4 +51,4 @@ func LoadWordsFromCSV(filename string, category string) ([]models.Word, error) {
 	}
 
 	return words, nil
-} 
+}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"taboo-game/helpers"
+	"taboo-game/models"
 )
 
 // getTestDataPath returns the absolute path to the testdata directory
@@ -30,13 +31,13 @@ func TestLoadWordsFromCSV(t *testing.T) {
 
 	// Check first word
 	assert.Equal(t, "dog", words[0].Word)
-	assert.Equal(t, "animals", words[0].Category)
+	assert.Equal(t, models.WordCategory("animals"), words[0].Category)
 	assert.Equal(t, []string{"bark", "pet", "animal"}, words[0].TabooWords)
 	assert.Equal(t, 1, words[0].Difficulty)
 
 	// Check second word
 	assert.Equal(t, "cat", words[1].Word)
-	assert.Equal(t, "animals", words[1].Category)
+	assert.Equal(t, models.WordCategory("animals"), words[1].Category)
 	assert.Equal(t, []string{"meow", "kitten", "pet"}, words[1].TabooWords)
 	assert.Equal(t, 1, words[1].Difficulty)
 
