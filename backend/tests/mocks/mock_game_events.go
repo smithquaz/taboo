@@ -1,9 +1,9 @@
 package mocks
 
 type MockGameEvents struct {
-	StartStageFunc    func(gameID string, stageNum int) error
-	HandleClueFunc    func(gameID string, playerID string, clue string) error
-	HandleGuessFunc   func(gameID string, playerID string, guess string) error
+	StartStageFunc      func(gameID string, stageNum int) error
+	HandleClueFunc      func(gameID string, playerID string, clue string) error
+	HandleGuessFunc     func(gameID string, playerID string, guess string) error
 	HandleViolationFunc func(gameID string, reporterID string, violationType string) error
 }
 
@@ -33,4 +33,4 @@ func (m *MockGameEvents) HandleViolation(gameID string, reporterID string, viola
 		return m.HandleViolationFunc(gameID, reporterID, violationType)
 	}
 	return nil
-} 
+}

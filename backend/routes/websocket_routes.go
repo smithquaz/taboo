@@ -11,4 +11,4 @@ func SetupWebSocketRoutes(router *gin.Engine, wsManager *websocket.Manager) {
 		playerID := c.Param("playerId")
 		wsManager.HandleConnection(c.Writer, c.Request, gameID, playerID)
 	})
-} 
+}

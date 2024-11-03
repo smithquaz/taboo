@@ -36,4 +36,4 @@ func (h *GameEventsHandler) HandleGuess(gameID string, playerID string, guess st
 func (h *GameEventsHandler) HandleViolation(gameID string, reporterID string, violationType string) error {
 	// Implement violation handling logic
 	return nil
-} 
+}

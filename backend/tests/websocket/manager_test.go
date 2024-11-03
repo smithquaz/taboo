@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"taboo-game/types"
 	"github.com/stretchr/testify/assert"
+	"taboo-game/types"
 )
 
 // Add debug logger

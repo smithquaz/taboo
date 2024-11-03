@@ -6,8 +6,8 @@ import (
 
 type mockGameEvents struct {
 	eventReceived chan bool
-	mu           sync.Mutex
-	calls        []struct {
+	mu            sync.Mutex
+	calls         []struct {
 		gameID   string
 		playerID string
 		event    interface{}
@@ -17,7 +17,7 @@ type mockGameEvents struct {
 func NewMockGameEvents() *mockGameEvents {
 	return &mockGameEvents{
 		eventReceived: make(chan bool, 1),
-		calls:        make([]struct {
+		calls: make([]struct {
 			gameID   string
 			playerID string
 			event    interface{}
@@ -33,10 +33,10 @@ func (m *mockGameEvents) HandleGameEvent(gameID, playerID string, event interfac
 		event    interface{}
 	}{gameID, playerID, event})
 	m.mu.Unlock()
-	
+
 	select {
 	case m.eventReceived <- true:
 	default:
 	}
 	return nil
-} 
+}

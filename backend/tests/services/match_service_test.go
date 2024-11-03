@@ -18,12 +18,12 @@ func setupMatchService(t *testing.T) (*services.MatchService, *models.MatchDetai
 			}, nil
 		},
 	}
-	
+
 	// Create a mock WebSocketManagerInterface
 	mockWSManager := &mocks.MockWebSocketManager{
 		SendToGameFunc: func(gameID string, message []byte) {},
 	}
-	
+
 	ms := services.NewMatchService(mockGameService, mockWSManager)
 
 	// Create and store a test match

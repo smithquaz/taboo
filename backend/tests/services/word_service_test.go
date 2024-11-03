@@ -49,7 +49,7 @@ func TestWordService(t *testing.T) {
 		card, err := ws.GetNextCard()
 		assert.NoError(t, err)
 		assert.NotNil(t, card)
-		
+
 		t.Logf("Got card #%d: %s", i+1, card.ID)
 		assert.False(t, usedCards[card.ID], "Card should not be repeated")
 		usedCards[card.ID] = true
