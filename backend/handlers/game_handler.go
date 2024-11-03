@@ -7,10 +7,10 @@ import (
 )
 
 type GameHandler struct {
-	gameService *services.GameService
+	gameService services.GameServiceInterface
 }
 
-func NewGameHandler(gameService *services.GameService) *GameHandler {
+func NewGameHandler(gameService services.GameServiceInterface) *GameHandler {
 	return &GameHandler{
 		gameService: gameService,
 	}
@@ -41,7 +41,7 @@ func (h *GameHandler) JoinGame(c *gin.Context) {
 	}
 
 	gameID := c.Param("id")
-	
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -57,13 +57,31 @@ func (h *GameHandler) JoinGame(c *gin.Context) {
 }
 
 func (h *GameHandler) GetGame(c *gin.Context) {
-	// Implementation
+	gameID := c.Param("id")
+	game, err := h.gameService.GetGame(gameID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, game)
 }
 
 func (h *GameHandler) StartGame(c *gin.Context) {
-	// Implementation
+	gameID := c.Param("id")
+	game, err := h.gameService.StartGame(gameID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, game)
 }
 
 func (h *GameHandler) EndGame(c *gin.Context) {
-	// Implementation
+	gameID := c.Param("id")
+	game, err := h.gameService.EndGame(gameID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, game)
 }

@@ -7,6 +7,7 @@ import (
 	"taboo-game/handlers"
 	"taboo-game/helpers"
 	"taboo-game/routes"
+	"taboo-game/services"
 )
 
 func main() {
@@ -28,22 +29,23 @@ func main() {
 		log.Fatalf("Failed to load specific words: %v", err)
 	}
 
+	// Initialize services
+	gameService := services.NewGameService()
+	matchService := services.NewMatchService(gameService)
+
 	// Initialize handlers
-	gameHandler := handlers.NewGameHandler()
-	playerHandler := handlers.NewPlayerHandler()
-	teamHandler := handlers.NewTeamHandler()
+	gameHandler := handlers.NewGameHandler(gameService)
+	matchHandler := handlers.NewMatchHandler(matchService)
 
 	// Initialize and register routes
 	wordRoutes := routes.NewWordRoutes(commonWords, specificWords)
 	gameRoutes := routes.NewGameRoutes(gameHandler)
-	playerRoutes := routes.NewPlayerRoutes(playerHandler)
-	teamRoutes := routes.NewTeamRoutes(teamHandler)
+	matchRoutes := routes.NewMatchRoutes(matchHandler)
 
 	// Register all routes
 	wordRoutes.RegisterRoutes(r)
 	gameRoutes.RegisterRoutes(r)
-	playerRoutes.RegisterRoutes(r)
-	teamRoutes.RegisterRoutes(r)
+	matchRoutes.RegisterRoutes(r)
 
 	// Health check
 	r.GET("/ping", func(c *gin.Context) {

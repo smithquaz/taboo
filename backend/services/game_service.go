@@ -78,3 +78,67 @@ func (s *GameService) AddPlayer(gameID string, playerName string) (*models.Playe
 	targetTeam.Players = append(targetTeam.Players, player)
 	return &player, nil
 }
+
+func (s *GameService) GetGame(gameID string) (*models.Game, error) {
+	game, exists := s.games[gameID]
+	if !exists {
+		return nil, errors.New("game not found")
+	}
+	return game, nil
+}
+
+func (s *GameService) StartGame(gameID string) (*models.Game, error) {
+	game, exists := s.games[gameID]
+	if !exists {
+		return nil, errors.New("game not found")
+	}
+
+	// Validate team sizes
+	for _, team := range game.Teams {
+		if len(team.Players) != team.Size {
+			return nil, errors.New("teams must be full to start game")
+		}
+	}
+
+	game.Status = models.GameStatusInProgress
+	game.Matches = []models.Match{
+		createMatch(1, gameID),
+		createMatch(2, gameID),
+		createMatch(3, gameID),
+	}
+
+	return game, nil
+}
+
+func (s *GameService) EndGame(gameID string) (*models.Game, error) {
+	game, exists := s.games[gameID]
+	if !exists {
+		return nil, errors.New("game not found")
+	}
+
+	if game.Status != models.GameStatusInProgress {
+		return nil, errors.New("game is not in progress")
+	}
+
+	game.Status = models.GameStatusCompleted
+	return game, nil
+}
+
+// Helper function to create a match
+func createMatch(number int, gameID string) models.Match {
+	return models.Match{
+		ID:     uuid.New().String(),
+		GameID: gameID,
+		Number: number,
+		Status: models.MatchStatusPending,
+		Stages: make([]models.Stage, 0),
+	}
+}
+
+func (s *GameService) UpdateGame(game *models.Game) error {
+	if _, exists := s.games[game.ID]; !exists {
+		return errors.New("game not found")
+	}
+	s.games[game.ID] = game
+	return nil
+}
