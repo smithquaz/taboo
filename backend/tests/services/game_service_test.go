@@ -1,10 +1,11 @@
 package services
 
 import (
-	"github.com/stretchr/testify/assert"
 	"taboo-game/models"
 	"taboo-game/services"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGameService(t *testing.T) {

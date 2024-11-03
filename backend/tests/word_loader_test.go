@@ -5,9 +5,10 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"taboo-game/helpers"
 	"taboo-game/models"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // getTestDataPath returns the absolute path to the testdata directory

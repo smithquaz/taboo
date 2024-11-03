@@ -6,8 +6,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/google/uuid"
 	"taboo-game/models"
+
+	"github.com/google/uuid"
 )
 
 func LoadWordsFromCSV(filename string, category models.WordCategory) ([]models.Word, error) {

@@ -1,13 +1,14 @@
 package main
 
 import (
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
 	"log"
 	"taboo-game/handlers"
 	"taboo-game/helpers"
 	"taboo-game/routes"
 	"taboo-game/services"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {

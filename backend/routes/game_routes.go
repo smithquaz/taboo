@@ -1,8 +1,9 @@
 package routes
 
 import (
-	"github.com/gin-gonic/gin"
 	"taboo-game/handlers"
+
+	"github.com/gin-gonic/gin"
 )
 
 type GameRoutes struct {

@@ -9,11 +9,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
 	"taboo-game/handlers"
 	"taboo-game/models"
 	"taboo-game/tests/mocks"
+
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateGame(t *testing.T) {

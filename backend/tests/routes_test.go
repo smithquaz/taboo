@@ -5,10 +5,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
 	"taboo-game/handlers"
 	"taboo-game/routes"
+
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
 )
 
 func setupTestRouter() *gin.Engine {

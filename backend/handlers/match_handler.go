@@ -1,9 +1,10 @@
 package handlers
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"taboo-game/services"
+
+	"github.com/gin-gonic/gin"
 )
 
 type MatchHandler struct {

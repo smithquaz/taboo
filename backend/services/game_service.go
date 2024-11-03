@@ -2,9 +2,10 @@ package services
 
 import (
 	"errors"
-	"github.com/google/uuid"
 	"taboo-game/models"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type GameService struct {
