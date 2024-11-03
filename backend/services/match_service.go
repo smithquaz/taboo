@@ -1,23 +1,30 @@
 package services
 
 import (
+	"encoding/json"
 	"errors"
 	"taboo-game/models"
+	"taboo-game/websocket"
+	"time"
 
 	"github.com/google/uuid"
 )
 
 type MatchService struct {
-	matches     map[string]*models.MatchDetails
-	words       []string
-	gameService GameServiceInterface
+	matches      map[string]*models.MatchDetails
+	words        []string
+	gameService  GameServiceInterface
+	wsManager    *websocket.Manager
+	turnDuration time.Duration
 }
 
-func NewMatchService(gameService GameServiceInterface) *MatchService {
+func NewMatchService(gameService GameServiceInterface, wsManager *websocket.Manager) *MatchService {
 	return &MatchService{
-		matches:     make(map[string]*models.MatchDetails),
-		words:       []string{},
-		gameService: gameService,
+		matches:      make(map[string]*models.MatchDetails),
+		words:        []string{},
+		gameService:  gameService,
+		wsManager:    wsManager,
+		turnDuration: 60 * time.Second,
 	}
 }
 
@@ -100,17 +107,79 @@ func (s *MatchService) ScorePoint(matchID string, isTeamA bool) (*models.MatchDe
 		return nil, errors.New("match not found")
 	}
 
-	if match.Status != models.MatchStatusPending {
+	if match.Status != models.MatchStatusInProgress {
 		return nil, errors.New("match is not in progress")
 	}
 
+	// Update score
 	if isTeamA {
 		match.TeamAScore++
 	} else {
 		match.TeamBScore++
 	}
 
+	// Broadcast score update
+	scoreUpdateData := models.ScoreUpdateData{
+		TeamAScore:  match.TeamAScore,
+		TeamBScore:  match.TeamBScore,
+		ScoringTeam: map[bool]string{true: "teamA", false: "teamB"}[isTeamA],
+	}
+	dataJSON, _ := json.Marshal(scoreUpdateData)
+
+	scoreUpdate := models.GameEvent{
+		Type:      models.EventTypeScoreUpdate,
+		GameID:    match.GameID,
+		MatchID:   match.ID,
+		Timestamp: time.Now(),
+		Data:      json.RawMessage(dataJSON),
+	}
+
+	eventJSON, _ := json.Marshal(scoreUpdate)
+	s.wsManager.SendToGame(match.GameID, eventJSON)
+
 	return match, nil
+}
+
+func (s *MatchService) ChangeTurn(matchID string) (*models.MatchDetails, error) {
+	match, exists := s.matches[matchID]
+	if !exists {
+		return nil, errors.New("match not found")
+	}
+
+	// Switch turns
+	match.TeamATurn = !match.TeamATurn
+	match.CurrentWord = s.getNextWord()
+
+	// Broadcast turn change
+	turnChangeData := models.TurnChangeData{
+		ActiveTeam: map[bool]string{true: "teamA", false: "teamB"}[match.TeamATurn],
+		TimeLeft:   int(s.turnDuration.Seconds()),
+	}
+	dataJSON, _ := json.Marshal(turnChangeData)
+
+	turnChange := models.GameEvent{
+		Type:      models.EventTypeTurnChange,
+		GameID:    match.GameID,
+		MatchID:   match.ID,
+		Timestamp: time.Now(),
+		Data:      json.RawMessage(dataJSON),
+	}
+
+	eventJSON, _ := json.Marshal(turnChange)
+	s.wsManager.SendToGame(match.GameID, eventJSON)
+
+	// Start turn timer
+	go s.startTurnTimer(match)
+
+	return match, nil
+}
+
+func (s *MatchService) startTurnTimer(match *models.MatchDetails) {
+	timer := time.NewTimer(s.turnDuration)
+	<-timer.C
+
+	// Time's up, change turns
+	s.ChangeTurn(match.ID)
 }
 
 func (s *MatchService) EndMatch(gameID, matchID string) (*models.MatchDetails, error) {

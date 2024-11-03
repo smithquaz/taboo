@@ -3,6 +3,7 @@ package services
 import (
 	"taboo-game/models"
 	"taboo-game/services"
+	"taboo-game/websocket"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,7 +12,8 @@ import (
 func TestMatchService(t *testing.T) {
 	t.Run("GetMatch", func(t *testing.T) {
 		gameSvc := services.NewGameService()
-		svc := services.NewMatchService(gameSvc)
+		wsManager := websocket.NewManager()
+		svc := services.NewMatchService(gameSvc, wsManager)
 		gameID := "game-1"
 		matchID := "match-1"
 		teamAssignments := map[string][]string{
@@ -33,7 +35,8 @@ func TestMatchService(t *testing.T) {
 
 	t.Run("StartMatch", func(t *testing.T) {
 		gameSvc := services.NewGameService()
-		svc := services.NewMatchService(gameSvc)
+		wsManager := websocket.NewManager()
+		svc := services.NewMatchService(gameSvc, wsManager)
 		gameID := "game-1"
 		matchID := "match-1"
 		teamAssignments := map[string][]string{
@@ -52,7 +55,8 @@ func TestMatchService(t *testing.T) {
 
 	t.Run("CreateStage", func(t *testing.T) {
 		gameSvc := services.NewGameService()
-		svc := services.NewMatchService(gameSvc)
+		wsManager := websocket.NewManager()
+		svc := services.NewMatchService(gameSvc, wsManager)
 		gameID := "game-1"
 		matchID := "match-1"
 		teamAssignments := map[string][]string{}

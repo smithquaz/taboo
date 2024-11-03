@@ -9,15 +9,6 @@ const (
 	GameStatusCompleted  GameStatus = "completed"
 )
 
-// MatchStatus represents the possible states of a match
-type MatchStatus string
-
-const (
-	MatchStatusPending   MatchStatus = "pending"
-	MatchStatusActive    MatchStatus = "active"
-	MatchStatusCompleted MatchStatus = "completed"
-)
-
 // StageStatus represents the possible states of a stage
 type StageStatus string
 

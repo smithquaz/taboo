@@ -6,6 +6,7 @@ import (
 	"taboo-game/helpers"
 	"taboo-game/routes"
 	"taboo-game/services"
+	"taboo-game/websocket"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -30,13 +31,20 @@ func main() {
 		log.Fatalf("Failed to load specific words: %v", err)
 	}
 
+	// Initialize WebSocket manager first
+	wsManager := websocket.NewManager()
+	go wsManager.Start()
+
 	// Initialize services
 	gameService := services.NewGameService()
-	matchService := services.NewMatchService(gameService)
+	matchService := services.NewMatchService(gameService, wsManager)
 
 	// Initialize handlers
 	gameHandler := handlers.NewGameHandler(gameService)
 	matchHandler := handlers.NewMatchHandler(matchService)
+
+	// Initialize WebSocket handler
+	wsHandler := handlers.NewWebSocketHandler(wsManager)
 
 	// Initialize and register routes
 	wordRoutes := routes.NewWordRoutes(commonWords, specificWords)
@@ -47,6 +55,9 @@ func main() {
 	wordRoutes.RegisterRoutes(r)
 	gameRoutes.RegisterRoutes(r)
 	matchRoutes.RegisterRoutes(r)
+
+	// Add WebSocket route
+	r.GET("/ws/:gameId", wsHandler.HandleConnection)
 
 	// Health check
 	r.GET("/ping", func(c *gin.Context) {

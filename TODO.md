@@ -3,12 +3,12 @@
 ## 1. Initial Server Setup (Backend - Golang/Gin)
 - [x] Initialize Go module
 - [x] Set up Gin framework
-- [ ] Create basic server structure
+- [x] Create basic server structure
   - [x] main.go
-  - [ ] routes/
-  - [ ] handlers/
-  - [ ] models/
-  - [ ] game/
+  - [x] routes/
+  - [x] handlers/
+  - [x] models/
+  - [x] game/
 - [x] Set up CORS
 - [x] Create basic health check endpoint
 
@@ -24,23 +24,23 @@
 - [ ] Configure environment variables
 
 ## 3. Backend Routes & Models
-- [ ] Define data models
+- [x] Define data models
   - [x] Player
   - [x] Team
   - [x] Game
   - [x] Match
   - [x] Stage
-- [ ] Implement routes
-  - [ ] Game creation
-  - [ ] Player management
-  - [ ] Team management
-  - [ ] Match flow
-  - [ ] Scoring system
+- [x] Implement routes
+  - [x] Game creation
+  - [x] Player management
+  - [x] Team management
+  - [x] Match flow
+  - [x] Scoring system
 
 ## 4. Backend Game Logic
-- [ ] Implement game state management
-- [ ] Create match logic
-- [ ] Create stage logic
+- [x] Implement game state management
+- [x] Create match logic
+- [x] Create stage logic
 - [ ] Implement scoring system
 - [ ] Add word cards data
 - [ ] Create WebSocket connection for real-time updates
@@ -61,7 +61,7 @@
 - [ ] Implement error handling and loading states
 
 ## 6. Testing
-- [ ] Write backend unit tests
+- [x] Write backend unit tests
 - [ ] Write frontend component tests
 - [ ] Perform integration testing
 - [ ] Test WebSocket functionality
