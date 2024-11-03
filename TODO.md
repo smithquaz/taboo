@@ -4,13 +4,13 @@
 - [x] Initialize Go module
 - [x] Set up Gin framework
 - [ ] Create basic server structure
-  - [ ] main.go
+  - [x] main.go
   - [ ] routes/
   - [ ] handlers/
   - [ ] models/
   - [ ] game/
-- [ ] Set up CORS
-- [ ] Create basic health check endpoint
+- [x] Set up CORS
+- [x] Create basic health check endpoint
 
 ## 2. Initial Frontend Setup (React/Tailwind)
 - [x] Create React project with Vite
@@ -25,11 +25,11 @@
 
 ## 3. Backend Routes & Models
 - [ ] Define data models
-  - [ ] Player
-  - [ ] Team
-  - [ ] Game
-  - [ ] Match
-  - [ ] Stage
+  - [x] Player
+  - [x] Team
+  - [x] Game
+  - [x] Match
+  - [x] Stage
 - [ ] Implement routes
   - [ ] Game creation
   - [ ] Player management
