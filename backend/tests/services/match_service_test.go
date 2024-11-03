@@ -131,7 +131,7 @@ func TestProcessGuessAttempt(t *testing.T) {
 		StageID: match.CurrentStage.ID,
 	}
 
-	err := ms.ProcessGuessAttempt(attempt)
+	err := ms.ProcessGuessAttempt(match.GameID, match.ID, attempt)
 	assert.NoError(t, err)
 	assert.Equal(t, models.PointsCorrectGuess, match.CurrentStage.TeamAScore)
 	assert.Equal(t, models.PointsCorrectGuess, match.TeamAScore)
@@ -140,7 +140,7 @@ func TestProcessGuessAttempt(t *testing.T) {
 	attempt.Correct = false
 	attempt.Violation = true
 	attempt.TeamID = "teamA"
-	err = ms.ProcessGuessAttempt(attempt)
+	err = ms.ProcessGuessAttempt(match.GameID, match.ID, attempt)
 	assert.NoError(t, err)
 
 	assert.Equal(t, models.PointsViolationCatch, match.CurrentStage.TeamBScore)

@@ -18,4 +18,5 @@ type MatchServiceInterface interface {
 	ScorePoint(matchID string, isTeamA bool) (*models.MatchDetails, error)
 	CreateStage(gameID, matchID string, stageDetails models.MatchStageDetails) (*models.MatchStage, error)
 	SwitchTeam(matchID string, playerID string) (*models.MatchDetails, error)
+	ProcessGuessAttempt(gameID, matchID string, attempt *models.GuessAttempt) error
 }

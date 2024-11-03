@@ -302,10 +302,10 @@ func (s *MatchService) getSmallerTeam(match *models.MatchDetails) string {
 	return "teamB"
 }
 
-func (s *MatchService) ProcessGuessAttempt(attempt *models.GuessAttempt) error {
-	match, err := s.GetCurrentMatch(attempt.StageID)
-	if err != nil {
-		return err
+func (s *MatchService) ProcessGuessAttempt(gameID, matchID string, attempt *models.GuessAttempt) error {
+	match, exists := s.matches[matchID]
+	if !exists || match.GameID != gameID {
+		return errors.New("match not found for the given game")
 	}
 
 	if match.CurrentStage == nil {

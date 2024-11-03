@@ -103,3 +103,43 @@ func (h *MatchHandler) GetMatch(c *gin.Context) {
 
 	c.JSON(http.StatusOK, match)
 }
+
+func (h *MatchHandler) ProcessGuessAttempt(c *gin.Context) {
+	gameID := c.Param("gameId")
+	matchID := c.Param("matchId")
+	var attempt models.GuessAttempt
+
+	if err := c.ShouldBindJSON(&attempt); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := h.matchService.ProcessGuessAttempt(gameID, matchID, &attempt)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Guess processed successfully"})
+}
+
+func (h *MatchHandler) SwitchTeam(c *gin.Context) {
+	matchID := c.Param("matchId")
+	var req struct {
+		PlayerID string `json:"playerId"`
+		NewTeam  string `json:"newTeam"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	_, err := h.matchService.SwitchTeam(matchID, req.PlayerID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Team switched successfully"})
+}

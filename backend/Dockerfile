@@ -13,6 +13,9 @@ RUN go mod download
 # Copy source code
 COPY . .
 
+# Copy the data directory
+COPY data ./data
+
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux go build -o server
 

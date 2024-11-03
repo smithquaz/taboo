@@ -41,11 +41,27 @@ func TestWordService(t *testing.T) {
 
 	// Test getting unique cards
 	usedCards := make(map[string]bool)
-	for i := 0; i < len(testWords)*len(files); i++ {
+	expectedCards := len(testWords) * len(files)
+
+	// Add debug logging
+	t.Logf("Expecting to get %d cards", expectedCards)
+
+	for i := 0; i < expectedCards; i++ {
 		card, err := ws.GetNextCard()
-		assert.NoError(t, err)
-		assert.NotNil(t, card)
+		if err != nil {
+			t.Logf("Failed to get card #%d: %v", i+1, err)
+			t.FailNow()
+		}
+		if card == nil {
+			t.Logf("Got nil card on iteration #%d", i+1)
+			t.FailNow()
+		}
+
+		t.Logf("Got card #%d: %s", i+1, card.ID)
 		assert.False(t, usedCards[card.ID], "Card should not be repeated")
 		usedCards[card.ID] = true
 	}
+
+	// Verify we got all expected cards
+	assert.Equal(t, expectedCards, len(usedCards), "Should have received all unique cards")
 }

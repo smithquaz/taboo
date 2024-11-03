@@ -16,12 +16,16 @@ func NewMatchRoutes(matchHandler *handlers.MatchHandler) *MatchRoutes {
 	}
 }
 
-func (r *MatchRoutes) RegisterRoutes(rg *gin.Engine) {
-	matches := rg.Group("/api/v1/games/:gameId/matches")
+func (r *MatchRoutes) RegisterRoutes(router *gin.Engine) {
+	api := router.Group("/api/v1")
 	{
-		matches.GET("/:matchId", r.matchHandler.GetMatch)
-		matches.PUT("/:matchId/start", r.matchHandler.StartMatch)
-		matches.PUT("/:matchId/end", r.matchHandler.EndMatch)
-		matches.POST("/:matchId/stages", r.matchHandler.CreateStage)
+		matches := api.Group("/matches")
+		{
+			matches.GET("/:matchId", r.matchHandler.GetMatch)
+			matches.POST("/:matchId/start", r.matchHandler.StartMatch)
+			matches.POST("/:matchId/guess", r.matchHandler.ProcessGuessAttempt)
+			matches.PUT("/:matchId/end", r.matchHandler.EndMatch)
+			matches.POST("/:matchId/teams/switch/:playerId", r.matchHandler.SwitchTeam)
+		}
 	}
 }
